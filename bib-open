@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import bibtexparser
 import unicodedata
-import sys
+from subprocess import call
 import argparse
 
 filepath = "/home/thomas/bib/mybib.bib";
@@ -89,6 +89,16 @@ def main():
 		title_str = colored_str(entry["title"],title_str_color);
 		print("{}\t{}\n\t{}".format(number_str, author_str, title_str));
 
+	# Ask for the number of the document to be opened.
+	choice = input("Select number to open:" );
+	if choice in result:
+		entry = bibtex_database.entries[choice];
+		if "file" in entry:
+			document_filepath = entry["file"];
+			command = ["open",document_filepath];
+			call(command);
+		else:
+			print("No filepath given in database.");
 
 if __name__=="__main__":
 	main();
