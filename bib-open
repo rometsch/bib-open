@@ -1,0 +1,94 @@
+#!/usr/bin/python3
+import bibtexparser
+import unicodedata
+import sys
+import argparse
+
+filepath = "/home/thomas/bib/mybib.bib";
+number_str_color = "blue";
+author_str_color = "green";
+title_str_color = "yellow";
+
+def search_fields(database,pattern,field_name):
+# Search for pattern in the entries of the database.
+# Normalize the strings to enable lazy searching.
+	pattern_norm = normalize_str(pattern);
+	results = [];
+	for ind,entry in enumerate(database.entries):
+		if not(field_name in entry): continue
+		search_str = normalize_str(entry[field_name]);
+		if -1 != search_str.find(pattern_norm):
+			results.append(ind);
+	return results;
+
+def normalize_str(str):
+# Normalize string for searching purpose.
+	return "".join((c for c in unicodedata.normalize('NFKD', str) if unicodedata.category(c) != 'Mn')).lower();
+
+def colored_str(string,color):
+# Make a string appear in either 'red', 'green', 'yellow' or 'blue'.
+# Return the input if color is not supported.
+	# Define the colors
+	colors = {	"red" : "0;31;40", "green" : "0;32;40", "yellow" : "0;33;40",
+	 			"blue" : "0;34;40"};
+	if color in colors:
+		return "\x1b[{}m{}\x1b[0m".format(colors[color],string);
+	else:
+		return string;
+
+def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument("pattern", nargs='?', default="", help="pattern to be searched for in author, title, year and keywords. only considered if no other search option is given.");
+	parser.add_argument("-a","--author", help="search result include author");
+	parser.add_argument("-t","--title", help="search result include title");
+	parser.add_argument("-y","--year", help="search result include year");
+	parser.add_argument("-k","--keyword", help="search result include keyword");
+	args = parser.parse_args()
+	pattern = args.pattern;
+
+	# Load database from file.
+	with open(filepath) as bibtex_file:
+		bibtex_database = bibtexparser.load(bibtex_file);
+	num_entries = len(bibtex_database.entries);
+
+	result = [];
+	if not(args.author or args.title or args.year or args.keyword):
+		fields_to_search = ["author","title","year","keywords"];
+		# Search the database
+		for field in fields_to_search:
+			result = list(set(
+					result + search_fields(bibtex_database,pattern,field)));
+	else:
+		# Prepare a list with all indices to use for intersection later.
+		result = list(range(0,len(bibtex_database.entries)));
+
+	if args.author:
+		pattern = normalize_str(args.author);
+		result = list( set(result) & set(
+					search_fields(bibtex_database,pattern,"author")))
+	if args.title:
+		pattern = normalize_str(args.title);
+		result = list( set(result) & set(
+					search_fields(bibtex_database,pattern,"title")));
+	if args.year:
+		pattern = normalize_str(args.year);
+		result = list( set(result) & set(
+					search_fields(bibtex_database,pattern,"year")));
+	if args.keyword:
+		pattern = normalize_str(args.keyword);
+		result = list( set(result) & set(
+					search_fields(bibtex_database,pattern,"keywords")));
+
+	# Sort for ordered output
+	result = sorted(result);
+
+	for ind in result:
+		entry = bibtex_database.entries[ind];
+		number_str = colored_str("{}".format(ind),number_str_color);
+		author_str = colored_str(entry["author"], author_str_color);
+		title_str = colored_str(entry["title"],title_str_color);
+		print("{}\t{}\n\t{}".format(number_str, author_str, title_str));
+
+
+if __name__=="__main__":
+	main();
