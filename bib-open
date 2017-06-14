@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 import bibtexparser
 import unicodedata
-from subprocess import call
+from subprocess import Popen,PIPE
 import argparse
 
 filepath = "/home/thomas/bib/mybib.bib";
+document_folder = "/home/thomas/bib/";
+pdf_open_command = "okular";
 number_str_color = "blue";
 author_str_color = "green";
 title_str_color = "yellow";
@@ -48,8 +50,11 @@ def main():
 
 	# Load database from file.
 	with open(filepath) as bibtex_file:
-		bibtex_database = bibtexparser.load(bibtex_file);
-	num_entries = len(bibtex_database.entries);
+		bib_parser = bibtexparser.bparser.BibTexParser();
+		bib_parser.ignore_nonstandard_types = True;
+		bib_parser.homogenise_fields = True;
+		bib_database = bibtexparser.load(bibtex_file, bib_parser);
+	num_entries = len(bib_database.entries);
 
 	result = [];
 	if not(args.author or args.title or args.year or args.keyword):
@@ -57,46 +62,62 @@ def main():
 		# Search the database
 		for field in fields_to_search:
 			result = list(set(
-					result + search_fields(bibtex_database,pattern,field)));
+					result + search_fields(bib_database,pattern,field)));
 	else:
 		# Prepare a list with all indices to use for intersection later.
-		result = list(range(0,len(bibtex_database.entries)));
+		result = list(range(0,len(bib_database.entries)));
 
 	if args.author:
 		pattern = normalize_str(args.author);
 		result = list( set(result) & set(
-					search_fields(bibtex_database,pattern,"author")))
+					search_fields(bib_database,pattern,"author")))
 	if args.title:
 		pattern = normalize_str(args.title);
 		result = list( set(result) & set(
-					search_fields(bibtex_database,pattern,"title")));
+					search_fields(bib_database,pattern,"title")));
 	if args.year:
 		pattern = normalize_str(args.year);
 		result = list( set(result) & set(
-					search_fields(bibtex_database,pattern,"year")));
+					search_fields(bib_database,pattern,"year")));
 	if args.keyword:
 		pattern = normalize_str(args.keyword);
 		result = list( set(result) & set(
-					search_fields(bibtex_database,pattern,"keywords")));
+					search_fields(bib_database,pattern,"keywords")));
 
 	# Sort for ordered output
 	result = sorted(result);
 
-	for ind in result:
-		entry = bibtex_database.entries[ind];
-		number_str = colored_str("{}".format(ind),number_str_color);
+	for n,ind in enumerate(result):
+		entry = bib_database.entries[ind];
+		number_str = colored_str("➡️ {:02}".format(n+1),number_str_color);
 		author_str = colored_str(entry["author"], author_str_color);
 		title_str = colored_str(entry["title"],title_str_color);
-		print("{}\t{}\n\t{}".format(number_str, author_str, title_str));
+		url_str = "";
+		url_synonym_list = ["url", "urls", "link", "links", "adsurl"];
+		for url_word in url_synonym_list:
+			if url_word in entry:
+				url_str = entry[url_word];
+		entry_str = "{}\t{}\n\t{}".format(number_str, author_str, title_str);
+		entry_str = "".join([entry_str,"\n\t{}".format(url_str)]);
+		print(entry_str);
+
+	# Exit, if there are no results.
+	if len(result) == 0:
+		return;
 
 	# Ask for the number of the document to be opened.
-	choice = input("Select number to open:" );
-	if choice in result:
-		entry = bibtex_database.entries[choice];
+	choice = input("Select number to open : " );
+	# Exit if input is something else than a number
+	try:
+		open_ind = int(choice);
+	except ValueError:
+		return;
+	if open_ind-1 in range(len(result)):
+		entry = bib_database.entries[result[open_ind-1]];
 		if "file" in entry:
 			document_filepath = entry["file"];
-			command = ["open",document_filepath];
-			call(command);
+			command = [pdf_open_command,"{}{}".format(document_folder,document_filepath)];
+			Popen(command,stdout=PIPE,stderr=PIPE);
 		else:
 			print("No filepath given in database.");
 
