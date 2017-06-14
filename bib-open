@@ -10,6 +10,7 @@ pdf_open_command = "okular";
 number_str_color = "blue";
 author_str_color = "green";
 title_str_color = "yellow";
+chars_to_remove = ["{","}"];
 
 def search_fields(database,pattern,field_name):
 # Search for pattern in the entries of the database.
@@ -99,6 +100,7 @@ def main():
 				url_str = entry[url_word];
 		entry_str = "{}\t{}\n\t{}".format(number_str, author_str, title_str);
 		entry_str = "".join([entry_str,"\n\t{}".format(url_str)]);
+		entry_str = "".join(c for c in entry_str if not c in chars_to_remove);
 		print(entry_str);
 
 	# Exit, if there are no results.
