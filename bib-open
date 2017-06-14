@@ -10,6 +10,7 @@ pdf_open_command = "okular";
 number_str_color = "blue";
 author_str_color = "green";
 title_str_color = "yellow";
+year_str_color = "red";
 chars_to_remove = ["{","}"];
 
 def search_fields(database,pattern,field_name):
@@ -93,12 +94,13 @@ def main():
 		number_str = colored_str("➡️ {:02}".format(n+1),number_str_color);
 		author_str = colored_str(entry["author"], author_str_color);
 		title_str = colored_str(entry["title"],title_str_color);
+		year_str = colored_str(entry["year"],year_str_color);
 		url_str = "";
 		url_synonym_list = ["url", "urls", "link", "links", "adsurl"];
 		for url_word in url_synonym_list:
 			if url_word in entry:
 				url_str = entry[url_word];
-		entry_str = "{}\t{}\n\t{}".format(number_str, author_str, title_str);
+		entry_str = "{}\t{} {}\n\t{}".format(number_str, year_str, author_str, title_str);
 		entry_str = "".join([entry_str,"\n\t{}".format(url_str)]);
 		entry_str = "".join(c for c in entry_str if not c in chars_to_remove);
 		print(entry_str);
