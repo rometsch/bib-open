@@ -59,15 +59,15 @@ def main():
 	num_entries = len(bib_database.entries);
 
 	result = [];
-	if not(args.author or args.title or args.year or args.keyword):
-		fields_to_search = ["author","title","year","keywords"];
-		# Search the database
-		for field in fields_to_search:
-			result = list(set(
-					result + search_fields(bib_database,pattern,field)));
-	else:
+	#if not(args.author or args.title or args.year or args.keyword):
+	fields_to_search = ["author","title","year","keywords"];
+	# Search the database
+	for field in fields_to_search:
+		result = list(set(
+				result + search_fields(bib_database,pattern,field)));
+	#else:
 		# Prepare a list with all indices to use for intersection later.
-		result = list(range(0,len(bib_database.entries)));
+	#	result = list(range(0,len(bib_database.entries)));
 
 	if args.author:
 		pattern = normalize_str(args.author);
