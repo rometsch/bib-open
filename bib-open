@@ -52,7 +52,7 @@ def main():
 	# Load database from file.
 	with open(filepath) as bibtex_file:
 		bib_parser = bibtexparser.bparser.BibTexParser();
-		bib_parser.ignore_nonstandard_types = True;
+		bib_parser.ignore_nonstandard_types = False;
 		bib_parser.homogenise_fields = True;
 		bib_database = bibtexparser.load(bibtex_file, bib_parser);
 	num_entries = len(bib_database.entries);
