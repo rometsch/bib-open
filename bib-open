@@ -3,6 +3,7 @@ import bibtexparser
 import unicodedata
 from subprocess import Popen,PIPE
 import argparse
+import difflib
 
 filepath = "/home/thomas/bib/mybib.bib";
 document_folder = "/home/thomas/bib/";
@@ -21,8 +22,11 @@ def search_fields(database,pattern,field_name):
 	for ind,entry in enumerate(database.entries):
 		if not(field_name in entry): continue
 		search_str = normalize_str(entry[field_name]);
-		if -1 != search_str.find(pattern_norm):
-			results.append(ind);
+		for substr in search_str.split():
+			seq=difflib.SequenceMatcher(a=pattern_norm, b=substr);
+			#if -1 != search_str.find(pattern_norm):
+			if seq.ratio() > 0.7:
+				results.append(ind);
 	return results;
 
 def normalize_str(str):
@@ -88,6 +92,10 @@ def main():
 
 	# Sort for ordered output
 	result = sorted(result);
+
+	#----------------------------------------
+	#	Output of list
+	#----------------------------------------
 
 	for n,ind in enumerate(result):
 		entry = bib_database.entries[ind];
